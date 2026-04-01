@@ -52,6 +52,14 @@ A RESTful Web API built with ASP.NET Core for managing courses, instructors, stu
 - ✅ **Async Operations** - Non-blocking database calls
 - ✅ **Swagger Documentation** - Interactive API documentation
 
+### Bonus Features
+- ✅ **Refresh Tokens** - Secure session renewal without re-login
+- ✅ **Hangfire Background Jobs** - Scheduled tasks including:
+  - Daily cleanup of expired refresh tokens
+  - Daily enrollment statistics report
+  - Weekly auto-completion of finished course enrollments
+- ✅ **Hangfire Dashboard** - Monitor background jobs at `/hangfire`
+
 ## Getting Started
 
 ### Prerequisites
@@ -98,8 +106,13 @@ The database is seeded with an admin user:
 ### Authentication
 | Method | Endpoint | Description | Auth Required |
 |--------|----------|-------------|---------------|
-| POST | `/api/auth/login` | Login and get JWT token | No |
+| POST | `/api/auth/login` | Login and get JWT + refresh tokens | No |
 | POST | `/api/auth/register` | Register new user | No |
+| POST | `/api/auth/refresh-token` | Get new JWT using refresh token | No |
+| POST | `/api/auth/revoke-token` | Revoke a refresh token | Yes |
+
+### Hangfire Dashboard
+- **URL:** `/hangfire` (available in development mode)
 
 ### Instructors
 | Method | Endpoint | Description | Auth Required | Roles |

@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Hangfire;
+using Hangfire.MemoryStorage;
 using CourseManagementAPI.Data;
 using CourseManagementAPI.Services;
 
@@ -20,6 +22,16 @@ builder.Services.AddScoped<IInstructorService, InstructorService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+builder.Services.AddScoped<IBackgroundJobService, BackgroundJobService>();
+
+// Hangfire configuration for background jobs
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UseMemoryStorage());
+
+builder.Services.AddHangfireServer();
 
 // JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
@@ -54,7 +66,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Course Management API",
         Version = "v1",
-        Description = "ASP.NET Core Web API for managing courses, instructors, students, and enrollments",
+        Description = "ASP.NET Core Web API for managing courses, instructors, students, and enrollments. Includes JWT authentication with refresh tokens and Hangfire background jobs.",
         Contact = new OpenApiContact
         {
             Name = "Course Management Team"
@@ -102,6 +114,12 @@ if (app.Environment.IsDevelopment())
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Hangfire Dashboard (only in development)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire");
+}
+
 app.MapControllers();
 
 // Apply migrations automatically in development
@@ -110,5 +128,21 @@ using (var scope = app.Services.CreateScope())
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     context.Database.Migrate();
 }
+
+// Configure recurring background jobs
+RecurringJob.AddOrUpdate<IBackgroundJobService>(
+    "cleanup-expired-tokens",
+    service => service.CleanupExpiredRefreshTokensAsync(),
+    Cron.Daily); // Runs daily at midnight
+
+RecurringJob.AddOrUpdate<IBackgroundJobService>(
+    "daily-enrollment-report",
+    service => service.GenerateDailyEnrollmentReportAsync(),
+    Cron.Daily(8)); // Runs daily at 8 AM
+
+RecurringJob.AddOrUpdate<IBackgroundJobService>(
+    "auto-complete-enrollments",
+    service => service.DeactivateOldEnrollmentsAsync(),
+    Cron.Weekly); // Runs weekly
 
 app.Run();

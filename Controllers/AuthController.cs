@@ -20,7 +20,7 @@ public class AuthController : ControllerBase
     /// Login with username and password
     /// </summary>
     /// <param name="dto">Login credentials</param>
-    /// <returns>JWT token and user info</returns>
+    /// <returns>JWT token, refresh token and user info</returns>
     [HttpPost("login")]
     [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -55,5 +55,45 @@ public class AuthController : ControllerBase
         }
 
         return CreatedAtAction(nameof(Register), new { id = result.Id }, result);
+    }
+
+    /// <summary>
+    /// Refresh JWT token using refresh token
+    /// </summary>
+    /// <param name="dto">Refresh token</param>
+    /// <returns>New JWT token and refresh token</returns>
+    [HttpPost("refresh-token")]
+    [ProducesResponseType(typeof(TokenResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<TokenResponseDto>> RefreshToken([FromBody] RefreshTokenRequestDto dto)
+    {
+        var result = await _authService.RefreshTokenAsync(dto.RefreshToken);
+        
+        if (result == null)
+        {
+            return Unauthorized(new { message = "Invalid or expired refresh token" });
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Revoke a refresh token (logout)
+    /// </summary>
+    /// <param name="dto">Refresh token to revoke</param>
+    /// <returns>Success message</returns>
+    [HttpPost("revoke-token")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequestDto dto)
+    {
+        var result = await _authService.RevokeTokenAsync(dto.RefreshToken);
+        
+        if (!result)
+        {
+            return BadRequest(new { message = "Invalid refresh token" });
+        }
+
+        return Ok(new { message = "Token revoked successfully" });
     }
 }

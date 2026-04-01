@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +15,8 @@ public interface IAuthService
     Task<LoginResponseDto?> LoginAsync(LoginDto dto);
     Task<UserReadDto?> RegisterAsync(UserCreateDto dto);
     Task<UserReadDto?> GetUserByIdAsync(int id);
+    Task<TokenResponseDto?> RefreshTokenAsync(string refreshToken);
+    Task<bool> RevokeTokenAsync(string refreshToken);
 }
 
 public class AuthService : IAuthService
@@ -39,15 +42,20 @@ public class AuthService : IAuthService
 
         // Update last login
         user.LastLoginAt = DateTime.UtcNow;
+
+        // Generate tokens
+        var token = GenerateJwtToken(user);
+        var refreshToken = await GenerateRefreshTokenAsync(user.Id);
+        
         await _context.SaveChangesAsync();
 
-        var token = GenerateJwtToken(user);
         var expiration = DateTime.UtcNow.AddHours(
             double.Parse(_configuration["Jwt:ExpirationHours"] ?? "24"));
 
         return new LoginResponseDto
         {
             Token = token,
+            RefreshToken = refreshToken.Token,
             Expiration = expiration,
             User = new UserReadDto
             {
@@ -108,6 +116,52 @@ public class AuthService : IAuthService
             .FirstOrDefaultAsync();
     }
 
+    public async Task<TokenResponseDto?> RefreshTokenAsync(string refreshToken)
+    {
+        var storedToken = await _context.RefreshTokens
+            .Include(rt => rt.User)
+            .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+
+        if (storedToken == null || !storedToken.IsActive)
+        {
+            return null;
+        }
+
+        // Revoke old refresh token
+        storedToken.RevokedAt = DateTime.UtcNow;
+
+        // Generate new tokens
+        var newJwtToken = GenerateJwtToken(storedToken.User);
+        var newRefreshToken = await GenerateRefreshTokenAsync(storedToken.UserId);
+
+        await _context.SaveChangesAsync();
+
+        var expiration = DateTime.UtcNow.AddHours(
+            double.Parse(_configuration["Jwt:ExpirationHours"] ?? "24"));
+
+        return new TokenResponseDto
+        {
+            Token = newJwtToken,
+            RefreshToken = newRefreshToken.Token,
+            Expiration = expiration
+        };
+    }
+
+    public async Task<bool> RevokeTokenAsync(string refreshToken)
+    {
+        var storedToken = await _context.RefreshTokens
+            .FirstOrDefaultAsync(rt => rt.Token == refreshToken);
+
+        if (storedToken == null || !storedToken.IsActive)
+        {
+            return false;
+        }
+
+        storedToken.RevokedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     private string GenerateJwtToken(User user)
     {
         var jwtKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured");
@@ -132,5 +186,22 @@ public class AuthService : IAuthService
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private async Task<RefreshToken> GenerateRefreshTokenAsync(int userId)
+    {
+        var randomBytes = new byte[64];
+        using var rng = RandomNumberGenerator.Create();
+        rng.GetBytes(randomBytes);
+
+        var refreshToken = new RefreshToken
+        {
+            Token = Convert.ToBase64String(randomBytes),
+            ExpiresAt = DateTime.UtcNow.AddDays(7), // Refresh token valid for 7 days
+            UserId = userId
+        };
+
+        _context.RefreshTokens.Add(refreshToken);
+        return refreshToken;
     }
 }

@@ -46,6 +46,20 @@ public class LoginDto
 public class LoginResponseDto
 {
     public string Token { get; set; } = string.Empty;
+    public string RefreshToken { get; set; } = string.Empty;
     public DateTime Expiration { get; set; }
     public UserReadDto User { get; set; } = null!;
+}
+
+public class RefreshTokenRequestDto
+{
+    [Required(ErrorMessage = "Refresh token is required")]
+    public string RefreshToken { get; set; } = string.Empty;
+}
+
+public class TokenResponseDto
+{
+    public string Token { get; set; } = string.Empty;
+    public string RefreshToken { get; set; } = string.Empty;
+    public DateTime Expiration { get; set; }
 }
