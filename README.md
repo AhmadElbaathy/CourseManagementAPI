@@ -100,7 +100,6 @@ The React app will open in your browser at `http://localhost:3000`.
 
 ## Screenshots
 
-> Insert screenshots of your running application below:
 
 ### Login Page
 ![Login Page](./Screenshots/login.png)
@@ -125,15 +124,3 @@ The React app will open in your browser at `http://localhost:3000`.
 
 ---
 
-## Submission Checklist
-
-- [x] GitHub Repository link shared
-- [x] README.md completed with all sections
-- [x] Screenshots inserted in the Screenshots section above
-- [x] Backend runs successfully (`dotnet run`)
-- [x] Frontend runs successfully (`npm start`)
-- [x] All CRUD operations work for every model
-- [x] Login and Register work correctly
-- [x] Cookie-based authentication persists across pages
-- [x] Protected routes redirect to login when not authenticated
-- [x] Laptop ready for live demo in the lab
