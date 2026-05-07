@@ -41,6 +41,7 @@ public class StudentService : IStudentService
                 EnrollmentDate = s.EnrollmentDate,
                 GraduationDate = s.GraduationDate,
                 IsActive = s.IsActive,
+                IsProfileComplete = s.IsProfileComplete,
                 EnrolledCoursesCount = s.Enrollments.Count(e => e.Status == "Enrolled")
             })
             .ToListAsync();
@@ -63,6 +64,7 @@ public class StudentService : IStudentService
                 EnrollmentDate = s.EnrollmentDate,
                 GraduationDate = s.GraduationDate,
                 IsActive = s.IsActive,
+                IsProfileComplete = s.IsProfileComplete,
                 EnrolledCoursesCount = s.Enrollments.Count(e => e.Status == "Enrolled")
             })
             .FirstOrDefaultAsync();
@@ -79,7 +81,8 @@ public class StudentService : IStudentService
             StudentNumber = dto.StudentNumber,
             Major = dto.Major,
             EnrollmentDate = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
+            IsProfileComplete = true
         };
 
         _context.Students.Add(student);
@@ -96,6 +99,7 @@ public class StudentService : IStudentService
             Major = student.Major,
             EnrollmentDate = student.EnrollmentDate,
             IsActive = student.IsActive,
+            IsProfileComplete = student.IsProfileComplete,
             EnrolledCoursesCount = 0
         };
     }
@@ -112,6 +116,8 @@ public class StudentService : IStudentService
         if (dto.Major != null) student.Major = dto.Major;
         if (dto.GraduationDate.HasValue) student.GraduationDate = dto.GraduationDate;
         if (dto.IsActive.HasValue) student.IsActive = dto.IsActive.Value;
+
+        student.IsProfileComplete = true; // Mark as complete after update
 
         await _context.SaveChangesAsync();
 

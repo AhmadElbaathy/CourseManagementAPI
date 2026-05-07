@@ -78,6 +78,23 @@ public class StudentsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<StudentReadDto>> Update(int id, [FromBody] StudentUpdateDto dto)
     {
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "Student")
+        {
+            var studentIdClaim = User.FindFirst("StudentId")?.Value;
+            if (studentIdClaim != null && int.TryParse(studentIdClaim, out int tokenStudentId))
+            {
+                if (id != tokenStudentId)
+                {
+                    return Forbid(); // Cannot modify other students
+                }
+            }
+            else
+            {
+                return Forbid();
+            }
+        }
+
         var student = await _studentService.UpdateAsync(id, dto);
         
         if (student == null)
@@ -119,6 +136,23 @@ public class StudentsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IEnumerable<EnrollmentSummaryDto>>> GetEnrollments(int id)
     {
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "Student")
+        {
+            var studentIdClaim = User.FindFirst("StudentId")?.Value;
+            if (studentIdClaim != null && int.TryParse(studentIdClaim, out int tokenStudentId))
+            {
+                if (id != tokenStudentId)
+                {
+                    return Forbid(); // Cannot view other students' enrollments
+                }
+            }
+            else
+            {
+                return Forbid();
+            }
+        }
+
         // Verify student exists
         var student = await _studentService.GetByIdAsync(id);
         if (student == null)

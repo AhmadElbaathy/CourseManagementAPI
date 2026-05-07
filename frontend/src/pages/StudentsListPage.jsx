@@ -90,7 +90,12 @@ function StudentsListPage({ user }) {
               {students.map((student) => (
                 <tr key={student.id}>
                   <td>{student.id}</td>
-                  <td>{student.firstName} {student.lastName}</td>
+                  <td>
+                    {student.firstName} {student.lastName}
+                    {!student.isProfileComplete && (
+                      <span className="badge" style={{marginLeft: '8px', fontSize: '0.8em', padding: '2px 6px', backgroundColor: '#ffc107', color: '#000', borderRadius: '4px'}}>Needs Update</span>
+                    )}
+                  </td>
                   <td>{student.email}</td>
                   <td>{student.studentNumber}</td>
                   <td>{student.major || '-'}</td>

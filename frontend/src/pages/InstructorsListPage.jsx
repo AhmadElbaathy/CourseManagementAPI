@@ -72,7 +72,12 @@ function InstructorsListPage({ user }) {
               {instructors.map((instructor) => (
                 <tr key={instructor.id}>
                   <td>{instructor.id}</td>
-                  <td>{instructor.firstName} {instructor.lastName}</td>
+                   <td>
+                    {instructor.firstName} {instructor.lastName}
+                    {!instructor.isProfileComplete && (
+                      <span className="badge" style={{marginLeft: '8px', fontSize: '0.8em', padding: '2px 6px', backgroundColor: '#ffc107', color: '#000', borderRadius: '4px'}}>Needs Update</span>
+                    )}
+                  </td>
                   <td>{instructor.email}</td>
                   <td>{instructor.department}</td>
                   <td>{instructor.courseCount}</td>
@@ -80,8 +85,12 @@ function InstructorsListPage({ user }) {
                   {(canEdit || canDelete) && (
                     <td>
                       <div className="action-buttons">
-                        {canEdit && <Link to={`/instructors/${instructor.id}`} className="btn btn-small btn-edit">Edit</Link>}
-                        {canDelete && <button type="button" onClick={() => handleDelete(instructor.id)} className="btn btn-small btn-delete">Delete</button>}
+                        {canEdit && (role === 'Admin' || instructor.id === user?.instructorId) && (
+                          <Link to={`/instructors/${instructor.id}`} className="btn btn-small btn-edit">Edit</Link>
+                        )}
+                        {canDelete && (role === 'Admin' || instructor.id === user?.instructorId) && (
+                          <button type="button" onClick={() => handleDelete(instructor.id)} className="btn btn-small btn-delete">Delete</button>
+                        )}
                       </div>
                     </td>
                   )}

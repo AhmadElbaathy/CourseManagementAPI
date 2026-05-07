@@ -71,6 +71,7 @@ public class StudentReadDto
     public DateTime EnrollmentDate { get; set; }
     public DateTime? GraduationDate { get; set; }
     public bool IsActive { get; set; }
+    public bool IsProfileComplete { get; set; }
     public int EnrolledCoursesCount { get; set; }
 }
 

@@ -10,7 +10,7 @@ function EnrollmentFormPage({ user }) {
 
   const role = user?.role;
   const canCreate = role === 'Admin' || role === 'Student';
-  const canEdit = role === 'Admin' || role === 'Instructor';
+  const canEdit = role === 'Admin' || role === 'Instructor' || role === 'Student';
 
   const [studentId, setStudentId] = useState('');
   const [courseId, setCourseId] = useState('');
@@ -24,15 +24,12 @@ function EnrollmentFormPage({ user }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // For Student role, pre-fill with their saved student ID if available
+  // For Student role, pre-fill with their student ID from the user object
   useEffect(() => {
-    if (!isEdit && role === 'Student') {
-      const savedId = localStorage.getItem('myStudentId');
-      if (savedId) {
-        setStudentId(savedId);
-      }
+    if (!isEdit && role === 'Student' && user?.studentId) {
+      setStudentId(user.studentId);
     }
-  }, [isEdit, role]);
+  }, [isEdit, role, user]);
 
   // Load courses for dropdown (in create mode)
   useEffect(() => {
@@ -80,21 +77,17 @@ function EnrollmentFormPage({ user }) {
           status: status || null,
           grade: grade !== '' ? parseFloat(grade) : null,
           letterGrade: letterGrade || null,
-          completionDate: completionDate || null,
+          completionDate: status === 'Completed' && completionDate ? completionDate : null,
         };
         await enrollmentService.update(id, payload);
         setSuccess('Enrollment updated successfully!');
       } else {
-        const sid = parseInt(studentId);
+        const sid = role === 'Student' ? user.studentId : parseInt(studentId);
         const payload = {
           studentId: sid,
           courseId: parseInt(courseId),
         };
         await enrollmentService.create(payload);
-        // Save student ID for future use (so the enrollments list can fetch their data)
-        if (role === 'Student') {
-          localStorage.setItem('myStudentId', String(sid));
-        }
         setSuccess('Enrollment created successfully!');
       }
       setTimeout(() => navigate('/enrollments'), 1500);
@@ -115,22 +108,21 @@ function EnrollmentFormPage({ user }) {
       <form onSubmit={handleSubmit} className="entity-form">
         {!isEdit ? (
           <>
-            <div className="form-group">
-              <label htmlFor="studentId">Student ID</label>
-              <input
-                id="studentId"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={studentId}
-                onChange={(evt) => setStudentId(evt.target.value)}
-                required
-                placeholder="Enter your student record ID"
-              />
-              {role === 'Student' && (
-                <small className="form-hint">Enter your Student record ID (check with your admin if unsure)</small>
-              )}
-            </div>
+            {role !== 'Student' && (
+              <div className="form-group">
+                <label htmlFor="studentId">Student ID</label>
+                <input
+                  id="studentId"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={studentId}
+                  onChange={(evt) => setStudentId(evt.target.value)}
+                  required
+                  placeholder="Enter student record ID"
+                />
+              </div>
+            )}
             <div className="form-group">
               <label htmlFor="courseId">Course</label>
               {courses.length > 0 ? (
@@ -200,15 +192,17 @@ function EnrollmentFormPage({ user }) {
                 </select>
               </div>
             </div>
-            <div className="form-group">
-              <label htmlFor="completionDate">Completion Date</label>
-              <input
-                id="completionDate"
-                type="date"
-                value={completionDate}
-                onChange={(evt) => setCompletionDate(evt.target.value)}
-              />
-            </div>
+            {status === 'Completed' && (
+              <div className="form-group">
+                <label htmlFor="completionDate">Completion Date (Optional)</label>
+                <input
+                  id="completionDate"
+                  type="date"
+                  value={completionDate}
+                  onChange={(evt) => setCompletionDate(evt.target.value)}
+                />
+              </div>
+            )}
           </>
         )}
         <div className="form-actions">

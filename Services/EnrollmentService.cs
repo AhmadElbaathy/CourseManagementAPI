@@ -52,7 +52,8 @@ public class EnrollmentService : IEnrollmentService
                     CourseCode = e.Course.CourseCode,
                     Title = e.Course.Title,
                     Credits = e.Course.Credits,
-                    Semester = e.Course.Semester
+                    Semester = e.Course.Semester,
+                    InstructorId = e.Course.InstructorId
                 }
             })
             .ToListAsync();
@@ -86,7 +87,8 @@ public class EnrollmentService : IEnrollmentService
                     CourseCode = e.Course.CourseCode,
                     Title = e.Course.Title,
                     Credits = e.Course.Credits,
-                    Semester = e.Course.Semester
+                    Semester = e.Course.Semester,
+                    InstructorId = e.Course.InstructorId
                 }
             })
             .FirstOrDefaultAsync();

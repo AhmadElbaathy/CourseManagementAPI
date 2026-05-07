@@ -66,6 +66,7 @@ public class InstructorReadDto
     public string Department { get; set; } = string.Empty;
     public DateTime HireDate { get; set; }
     public bool IsActive { get; set; }
+    public bool IsProfileComplete { get; set; }
     public int CourseCount { get; set; }
     public InstructorProfileReadDto? Profile { get; set; }
 }

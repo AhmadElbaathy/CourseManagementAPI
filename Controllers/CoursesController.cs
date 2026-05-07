@@ -12,10 +12,12 @@ namespace CourseManagementAPI.Controllers;
 public class CoursesController : ControllerBase
 {
     private readonly ICourseService _courseService;
+    private readonly IAuthService _authService;
 
-    public CoursesController(ICourseService courseService)
+    public CoursesController(ICourseService courseService, IAuthService authService)
     {
         _courseService = courseService;
+        _authService = authService;
     }
 
     /// <summary>
@@ -58,7 +60,7 @@ public class CoursesController : ControllerBase
     /// <param name="dto">Course data</param>
     /// <returns>Created course</returns>
     [HttpPost]
-    [Authorize(Roles = "Admin,Instructor")]
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(typeof(CourseReadDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CourseReadDto>> Create([FromBody] CourseCreateDto dto)
@@ -79,6 +81,34 @@ public class CoursesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CourseReadDto>> Update(int id, [FromBody] CourseUpdateDto dto)
     {
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "Instructor")
+        {
+            var existing = await _courseService.GetByIdAsync(id);
+            if (existing == null) return NotFound(new { message = $"Course with ID {id} not found" });
+
+            int? tokenInstructorId = null;
+            var instructorIdClaim = User.FindFirst("InstructorId")?.Value;
+            if (instructorIdClaim != null && int.TryParse(instructorIdClaim, out int parsedId))
+            {
+                tokenInstructorId = parsedId;
+            }
+            else
+            {
+                // Fallback: look up InstructorId from the database using the auth user ID
+                if (int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out int userId))
+                {
+                    var authUser = await _authService.GetUserByIdAsync(userId);
+                    tokenInstructorId = authUser?.InstructorId;
+                }
+            }
+
+            if (tokenInstructorId == null || existing.Instructor?.Id != tokenInstructorId.Value)
+            {
+                return Forbid();
+            }
+        }
+
         var course = await _courseService.UpdateAsync(id, dto);
         
         if (course == null)

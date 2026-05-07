@@ -77,6 +77,31 @@ public class InstructorsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<InstructorReadDto>> Update(int id, [FromBody] InstructorUpdateDto dto)
     {
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "Instructor")
+        {
+            int? tokenInstructorId = null;
+            var instructorIdClaim = User.FindFirst("InstructorId")?.Value;
+            if (instructorIdClaim != null && int.TryParse(instructorIdClaim, out int parsedId))
+            {
+                tokenInstructorId = parsedId;
+            }
+            else
+            {
+                // Fallback: look up InstructorId from the database using the auth user ID
+                if (int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out int userId))
+                {
+                    var authUser = await _instructorService.GetByUserIdAsync(userId);
+                    tokenInstructorId = authUser?.Id;
+                }
+            }
+
+            if (tokenInstructorId == null || id != tokenInstructorId.Value)
+            {
+                return Forbid();
+            }
+        }
+
         var instructor = await _instructorService.UpdateAsync(id, dto);
         
         if (instructor == null)
@@ -93,7 +118,7 @@ public class InstructorsController : ControllerBase
     /// <param name="id">Instructor ID</param>
     /// <returns>No content</returns>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")] // Only Admin can delete
+    [Authorize(Roles = "Admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
@@ -140,6 +165,30 @@ public class InstructorsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<InstructorProfileReadDto>> UpdateProfile(int id, [FromBody] InstructorProfileCreateDto dto)
     {
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "Instructor")
+        {
+            int? tokenInstructorId = null;
+            var instructorIdClaim = User.FindFirst("InstructorId")?.Value;
+            if (instructorIdClaim != null && int.TryParse(instructorIdClaim, out int parsedId))
+            {
+                tokenInstructorId = parsedId;
+            }
+            else
+            {
+                if (int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out int userId))
+                {
+                    var authUser = await _instructorService.GetByUserIdAsync(userId);
+                    tokenInstructorId = authUser?.Id;
+                }
+            }
+
+            if (tokenInstructorId == null || id != tokenInstructorId.Value)
+            {
+                return Forbid();
+            }
+        }
+
         // Verify instructor exists
         var instructor = await _instructorService.GetByIdAsync(id);
         if (instructor == null)

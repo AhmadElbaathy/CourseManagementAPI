@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import courseService from '../services/courseService';
+import instructorService from '../services/instructorService';
 
 function CourseFormPage({ user }) {
   const { id } = useParams();
@@ -8,7 +9,7 @@ function CourseFormPage({ user }) {
   const isEdit = Boolean(id);
 
   const role = user?.role;
-  const canCreate = role === 'Admin' || role === 'Instructor';
+  const canCreate = role === 'Admin';
   const canEdit = role === 'Admin' || role === 'Instructor';
 
   const [form, setForm] = useState({
@@ -23,10 +24,19 @@ function CourseFormPage({ user }) {
     instructorId: '',
     isActive: true,
   });
+  const [instructors, setInstructors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    if (role === 'Admin') {
+      instructorService.getAll()
+        .then(res => setInstructors(res.data))
+        .catch(() => {});
+    }
+  }, [role]);
 
   useEffect(() => {
     if (!isEdit && !canCreate) {
@@ -74,7 +84,7 @@ function CourseFormPage({ user }) {
       ...form,
       credits: parseInt(form.credits),
       maxEnrollment: parseInt(form.maxEnrollment),
-      instructorId: form.instructorId ? parseInt(form.instructorId) : null,
+      instructorId: role === 'Instructor' ? user?.instructorId : (form.instructorId ? parseInt(form.instructorId) : null),
     };
 
     try {
@@ -137,10 +147,19 @@ function CourseFormPage({ user }) {
             <input id="endDate" name="endDate" type="date" value={form.endDate} onChange={handleChange} required />
           </div>
         </div>
-        <div className="form-group">
-          <label htmlFor="instructorId">Instructor ID (optional)</label>
-          <input id="instructorId" name="instructorId" type="number" value={form.instructorId} onChange={handleChange} />
-        </div>
+        {role === 'Admin' && (
+          <div className="form-group">
+            <label htmlFor="instructorId">Assigned Instructor</label>
+            <select id="instructorId" name="instructorId" value={form.instructorId} onChange={handleChange}>
+              <option value="">-- No Instructor Assigned --</option>
+              {instructors.map(inst => (
+                <option key={inst.id} value={inst.id}>
+                  {inst.fullName} ({inst.department})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         {isEdit && (
           <div className="form-group checkbox-group">
             <label>

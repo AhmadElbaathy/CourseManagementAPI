@@ -63,6 +63,16 @@ public class EnrollmentsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<EnrollmentReadDto>> Create([FromBody] EnrollmentCreateDto dto)
     {
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "Student")
+        {
+            var studentIdClaim = User.FindFirst("StudentId")?.Value;
+            if (studentIdClaim != null && int.TryParse(studentIdClaim, out int tokenStudentId))
+            {
+                dto.StudentId = tokenStudentId; // Force StudentId to be their actual Student record ID
+            }
+        }
+
         // Check if already enrolled
         var isEnrolled = await _enrollmentService.IsStudentEnrolledAsync(dto.StudentId, dto.CourseId);
         if (isEnrolled)
@@ -87,11 +97,27 @@ public class EnrollmentsController : ControllerBase
     /// <param name="dto">Updated enrollment data</param>
     /// <returns>Updated enrollment</returns>
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin,Instructor")]
+    [Authorize(Roles = "Admin,Instructor,Student")]
     [ProducesResponseType(typeof(EnrollmentReadDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<EnrollmentReadDto>> Update(int id, [FromBody] EnrollmentUpdateDto dto)
     {
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "Student")
+        {
+            var existing = await _enrollmentService.GetByIdAsync(id);
+            if (existing == null) return NotFound(new { message = $"Enrollment with ID {id} not found" });
+            
+            var studentIdClaim = User.FindFirst("StudentId")?.Value;
+            if (studentIdClaim != null && int.TryParse(studentIdClaim, out int tokenStudentId))
+            {
+                if (existing.StudentId != tokenStudentId)
+                {
+                    return Forbid(); // Cannot modify others' enrollments
+                }
+            }
+        }
+
         var enrollment = await _enrollmentService.UpdateAsync(id, dto);
         
         if (enrollment == null)
@@ -113,6 +139,22 @@ public class EnrollmentsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "Student")
+        {
+            var existing = await _enrollmentService.GetByIdAsync(id);
+            if (existing == null) return NotFound(new { message = $"Enrollment with ID {id} not found" });
+            
+            var studentIdClaim = User.FindFirst("StudentId")?.Value;
+            if (studentIdClaim != null && int.TryParse(studentIdClaim, out int tokenStudentId))
+            {
+                if (existing.StudentId != tokenStudentId)
+                {
+                    return Forbid(); // Cannot delete others' enrollments
+                }
+            }
+        }
+
         var result = await _enrollmentService.DeleteAsync(id);
         
         if (!result)

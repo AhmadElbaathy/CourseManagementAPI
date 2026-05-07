@@ -35,9 +35,12 @@ function LoginPage({ setUser }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1>Login</h1>
+        <h1>Welcome Back</h1>
+        <p className="auth-subtitle">Sign in to Center Baathy Elt3lemy</p>
+        
         {error && <div className="alert alert-error">{error}</div>}
-        <form onSubmit={handleSubmit}>
+        
+        <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="username">Username</label>
             <input
@@ -46,6 +49,7 @@ function LoginPage({ setUser }) {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
+              placeholder="Enter your username"
             />
           </div>
           <div className="form-group">
@@ -56,14 +60,21 @@ function LoginPage({ setUser }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              placeholder="Enter your password"
             />
           </div>
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+          
+          <button type="submit" className="btn btn-primary btn-block mt-4" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+        
+        <div className="auth-divider">
+          <span>or</span>
+        </div>
+        
         <p className="auth-link">
-          Don't have an account? <Link to="/register">Register here</Link>
+          Don't have an account? <Link to="/register">Create one now</Link>
         </p>
       </div>
     </div>

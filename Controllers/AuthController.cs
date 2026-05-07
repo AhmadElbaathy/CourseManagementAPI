@@ -54,7 +54,7 @@ public class AuthController : ControllerBase
             return Conflict(new { message = "Username or email already exists" });
         }
 
-        return CreatedAtAction(nameof(Register), new { id = result.Id }, result);
+        return Ok(result);
     }
 
     /// <summary>

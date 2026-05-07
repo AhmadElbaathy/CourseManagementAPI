@@ -14,6 +14,7 @@ public interface IInstructorService
     Task<bool> DeleteAsync(int id);
     Task<InstructorProfileReadDto?> GetProfileAsync(int instructorId);
     Task<InstructorProfileReadDto> CreateOrUpdateProfileAsync(int instructorId, InstructorProfileCreateDto dto);
+    Task<InstructorReadDto?> GetByUserIdAsync(int userId);
 }
 
 public class InstructorService : IInstructorService
@@ -40,6 +41,7 @@ public class InstructorService : IInstructorService
                 Department = i.Department,
                 HireDate = i.HireDate,
                 IsActive = i.IsActive,
+                IsProfileComplete = i.IsProfileComplete,
                 CourseCount = i.Courses.Count,
                 Profile = i.Profile != null ? new InstructorProfileReadDto
                 {
@@ -73,6 +75,7 @@ public class InstructorService : IInstructorService
                 Department = i.Department,
                 HireDate = i.HireDate,
                 IsActive = i.IsActive,
+                IsProfileComplete = i.IsProfileComplete,
                 CourseCount = i.Courses.Count,
                 Profile = i.Profile != null ? new InstructorProfileReadDto
                 {
@@ -101,7 +104,8 @@ public class InstructorService : IInstructorService
             Phone = dto.Phone,
             Department = dto.Department,
             HireDate = dto.HireDate ?? DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
+            IsProfileComplete = true
         };
 
         _context.Instructors.Add(instructor);
@@ -117,6 +121,7 @@ public class InstructorService : IInstructorService
             Department = instructor.Department,
             HireDate = instructor.HireDate,
             IsActive = instructor.IsActive,
+            IsProfileComplete = instructor.IsProfileComplete,
             CourseCount = 0
         };
     }
@@ -133,6 +138,8 @@ public class InstructorService : IInstructorService
         if (dto.Department != null) instructor.Department = dto.Department;
         if (dto.IsActive.HasValue) instructor.IsActive = dto.IsActive.Value;
 
+        instructor.IsProfileComplete = true; // Mark as complete after update
+        
         await _context.SaveChangesAsync();
 
         return await GetByIdAsync(id);
@@ -217,5 +224,26 @@ public class InstructorService : IInstructorService
             LinkedInProfile = profile.LinkedInProfile,
             YearsOfExperience = profile.YearsOfExperience
         };
+    }
+
+    public async Task<InstructorReadDto?> GetByUserIdAsync(int userId)
+    {
+        return await _context.Instructors
+            .AsNoTracking()
+            .Where(i => i.UserId == userId)
+            .Select(i => new InstructorReadDto
+            {
+                Id = i.Id,
+                FirstName = i.FirstName,
+                LastName = i.LastName,
+                Email = i.Email,
+                Phone = i.Phone,
+                Department = i.Department,
+                HireDate = i.HireDate,
+                IsActive = i.IsActive,
+                IsProfileComplete = i.IsProfileComplete,
+                CourseCount = i.Courses.Count
+            })
+            .FirstOrDefaultAsync();
     }
 }

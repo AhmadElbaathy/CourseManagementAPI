@@ -9,7 +9,7 @@ function CoursesListPage({ user }) {
   const [success, setSuccess] = useState('');
 
   const role = user?.role;
-  const canCreate = role === 'Admin' || role === 'Instructor';
+  const canCreate = role === 'Admin';
   const canEdit = role === 'Admin' || role === 'Instructor';
   const canDelete = role === 'Admin';
 
@@ -82,8 +82,12 @@ function CoursesListPage({ user }) {
                   {(canEdit || canDelete) && (
                     <td>
                       <div className="action-buttons">
-                        {canEdit && <Link to={`/courses/${course.id}`} className="btn btn-small btn-edit">Edit</Link>}
-                        {canDelete && <button type="button" onClick={() => handleDelete(course.id)} className="btn btn-small btn-delete">Delete</button>}
+                        {canEdit && (role === 'Admin' || course.instructor?.id === user?.instructorId) && (
+                          <Link to={`/courses/${course.id}`} className="btn btn-small btn-edit">Edit</Link>
+                        )}
+                        {canDelete && (role === 'Admin' || course.instructor?.id === user?.instructorId) && (
+                          <button type="button" onClick={() => handleDelete(course.id)} className="btn btn-small btn-delete">Delete</button>
+                        )}
                       </div>
                     </td>
                   )}

@@ -31,6 +31,8 @@ public class Instructor
     
     public bool IsActive { get; set; } = true;
     
+    public bool IsProfileComplete { get; set; } = false;
+    
     // Foreign Key to User
     public int? UserId { get; set; }
     

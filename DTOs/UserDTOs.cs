@@ -32,6 +32,9 @@ public class UserReadDto
     public string Role { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }
+    public int? StudentId { get; set; }
+    public int? InstructorId { get; set; }
+    public bool IsProfileComplete { get; set; }
 }
 
 public class LoginDto

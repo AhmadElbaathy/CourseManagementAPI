@@ -5,8 +5,8 @@ const authService = {
     return API.post('/Auth/login', { username, password });
   },
 
-  register: (username, email, password, role) => {
-    return API.post('/Auth/register', { username, email, password, role });
+  register: (username, email, password) => {
+    return API.post('/Auth/register', { username, email, password });
   },
 };
 

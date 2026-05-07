@@ -13,25 +13,24 @@ function EnrollmentsListPage({ user }) {
   // Backend: GET all = Admin,Instructor. Create/Delete = Admin,Student. Update = Admin,Instructor.
   const canList = role === 'Admin' || role === 'Instructor';
   const canCreate = role === 'Admin' || role === 'Student';
-  const canEdit = role === 'Admin' || role === 'Instructor';
+  const canEdit = role === 'Admin' || role === 'Instructor' || role === 'Student';
   const canDelete = role === 'Admin' || role === 'Student';
 
   // For Student role: load their enrollments via GET /api/Students/{id}/enrollments
   const loadStudentEnrollments = useCallback(async () => {
-    const myStudentId = localStorage.getItem('myStudentId');
-    if (!myStudentId) {
+    if (!user?.studentId) {
       setLoading(false);
       return;
     }
     try {
-      const res = await studentService.getEnrollments(myStudentId);
+      const res = await studentService.getEnrollments(user.studentId);
       setEnrollments(res.data);
     } catch {
       setError('Failed to load your enrollments.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (canList) {
@@ -62,8 +61,7 @@ function EnrollmentsListPage({ user }) {
 
   if (loading) return <div className="loading">Loading enrollments...</div>;
 
-  const myStudentId = localStorage.getItem('myStudentId');
-  const isStudentWithNoId = role === 'Student' && !myStudentId;
+  const isStudentWithNoId = false; // no longer applicable since user.id is always present
 
   return (
     <div className="list-page">
@@ -112,8 +110,12 @@ function EnrollmentsListPage({ user }) {
                   {(canEdit || canDelete) && (
                     <td>
                       <div className="action-buttons">
-                        {canEdit && <Link to={`/enrollments/${enrollment.id}`} className="btn btn-small btn-edit">Edit</Link>}
-                        {canDelete && <button type="button" onClick={() => handleDelete(enrollment.id)} className="btn btn-small btn-delete">Delete</button>}
+                        {canEdit && (role === 'Admin' || role === 'Student' || enrollment.course?.instructorId === user?.id) && (
+                          <Link to={`/enrollments/${enrollment.id}`} className="btn btn-small btn-edit">Edit</Link>
+                        )}
+                        {canDelete && (role === 'Admin' || role === 'Student' || enrollment.course?.instructorId === user?.id) && (
+                          <button type="button" onClick={() => handleDelete(enrollment.id)} className="btn btn-small btn-delete">Delete</button>
+                        )}
                       </div>
                     </td>
                   )}

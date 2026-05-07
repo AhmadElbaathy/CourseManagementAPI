@@ -92,4 +92,5 @@ public class CourseSummaryDto
     public string Title { get; set; } = string.Empty;
     public int Credits { get; set; }
     public string Semester { get; set; } = string.Empty;
+    public int? InstructorId { get; set; }
 }

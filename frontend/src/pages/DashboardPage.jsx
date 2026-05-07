@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 function DashboardPage({ user }) {
   return (
     <div className="dashboard-page">
-      <h1>Dashboard</h1>
+      <h1>Center Baathy Elt3lemy</h1>
       <p className="dashboard-welcome">
         Welcome back, <strong>{user?.username}</strong>! Use the navigation below to manage your course data.
       </p>
